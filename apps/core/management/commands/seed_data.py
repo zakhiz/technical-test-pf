@@ -30,10 +30,16 @@ class Command(BaseCommand):
         ]
 
         for pos_data in positions_data:
-            Position.objects.get_or_create(
-                name=pos_data['name'],
-                defaults={'description': pos_data['description']}
-            )
+            try:
+                position = Position.objects.get(name=pos_data['name'])
+                self.stdout.write(
+                    f'Position already exists: {pos_data["name"]}')
+            except Position.DoesNotExist:
+                position = Position.objects.create(
+                    name=pos_data['name'],
+                    description=pos_data['description']
+                )
+                self.stdout.write(f'Created position: {pos_data["name"]}')
 
     def create_employees(self):
 
@@ -71,16 +77,27 @@ class Command(BaseCommand):
         ]
 
         for emp_data in employees_data:
-            position = Position.objects.get(name=emp_data['position'])
-            Employee.objects.get_or_create(
-                email=emp_data['email'],
-                defaults={
-                    'name': emp_data['name'],
-                    'last_name': emp_data['last_name'],
-                    'position': position,
-                    'salary': random.randint(30000, 120000)
-                }
-            )
+            try:
+                position = Position.objects.get(name=emp_data['position'])
+                try:
+                    employee = Employee.objects.get(email=emp_data['email'])
+                    self.stdout.write(
+                        f'Employee already exists: {emp_data["name"]} {emp_data["last_name"]}')
+                except Employee.DoesNotExist:
+                    employee = Employee.objects.create(
+                        name=emp_data['name'],
+                        last_name=emp_data['last_name'],
+                        email=emp_data['email'],
+                        position=position,
+                        salary=random.randint(30000, 120000),
+                        phone=f'555-{random.randint(1000, 9999)}',
+                        hire_date=datetime.now()
+                    )
+                    self.stdout.write(
+                        f'Created employee: {emp_data["name"]} {emp_data["last_name"]}')
+            except Position.DoesNotExist:
+                self.stdout.write(
+                    f'Position not found: {emp_data["position"]}')
 
     def create_tasks(self):
         employees = list(Employee.objects.all())
@@ -129,15 +146,23 @@ class Command(BaseCommand):
         ]
 
         for task_data in tasks_data:
-            assigned_employee = random.choice(employees)
-            due_date = datetime.now() + timedelta(days=random.randint(1, 30))
+            if employees:  # Verificar que hay empleados disponibles
+                assigned_employee = random.choice(employees)
+                due_date = datetime.now() + timedelta(days=random.randint(1, 30))
 
-            Task.objects.get_or_create(
-                title=task_data['title'],
-                assigned_to=assigned_employee,
-                defaults={
-                    'description': task_data['description'],
-                    'status': task_data['status'],
-                    'due_date': due_date
-                }
-            )
+                try:
+                    task = Task.objects.get(
+                        title=task_data['title'], assigned_to=assigned_employee)
+                    self.stdout.write(
+                        f'Task already exists: {task_data["title"]}')
+                except Task.DoesNotExist:
+                    task = Task.objects.create(
+                        title=task_data['title'],
+                        assigned_to=assigned_employee,
+                        description=task_data['description'],
+                        status=task_data['status'],
+                        due_date=due_date
+                    )
+                    self.stdout.write(f'Created task: {task_data["title"]}')
+            else:
+                self.stdout.write('No employees available to assign tasks')

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_spectacular',
+    'apps.core',
     'apps.employees',
     'apps.positions',
     'apps.tasks',
