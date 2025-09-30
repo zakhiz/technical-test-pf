@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'apps.employees',
     'apps.positions',
+    'apps.tasks',
     'mongoengine',
 ]
 

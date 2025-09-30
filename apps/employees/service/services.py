@@ -1,6 +1,9 @@
 from ..serializer import EmployeeSerializer
 from apps.common.constants import ERROR_MESSAGES
 from ..models import Employee
+from decimal import Decimal
+from bson import ObjectId
+from apps.positions.models import Position
 
 
 class EmployeeService:
@@ -17,7 +20,6 @@ class EmployeeService:
         try:
             query = {}
             if position_filter:
-                from bson import ObjectId
                 try:
                     query['position'] = ObjectId(position_filter)
                 except Exception as e:
@@ -30,8 +32,18 @@ class EmployeeService:
 
             employees = Employee.objects(**query).skip(offset).limit(page_size)
 
+            employees_with_position = []
+            for employee in employees:
+                position_name = EmployeeService._get_position_name(
+                    employee.position)
+                employee_data = {
+                    'employee': employee,
+                    'position_name': position_name
+                }
+                employees_with_position.append(employee_data)
+
             return {
-                'data': employees,
+                'data': employees_with_position,
                 'total': total,
                 'total_pages': total_pages
             }, None
@@ -52,22 +64,54 @@ class EmployeeService:
     @staticmethod
     def create_employee(data):
         try:
+            email = data.get('email')
+            if email and Employee.objects(email=email).first():
+                raise ValueError(
+                    f"Employee with email '{email}' already exists")
+
+            position_id = data.get('position')
+            if position_id:
+                try:
+                    Position.objects.get(id=position_id)
+                except Position.DoesNotExist:
+                    raise ValueError(
+                        f"Position with ID '{position_id}' does not exist")
+
             serializer = EmployeeSerializer(data=data)
             if serializer.is_valid():
                 employee = serializer.save()
                 return employee, None
             return None, serializer.errors
+        except ValueError as ve:
+            return None, str(ve)
         except Exception as e:
             return None, f"Error creating employee: {str(e)}"
 
     @staticmethod
     def update_employee(employee, data):
         try:
+            email = data.get('email')
+            if email and email != employee.email:
+                existing_employee = Employee.objects(email=email).first()
+                if existing_employee and existing_employee.id != employee.id:
+                    raise ValueError(
+                        f"Employee with email '{email}' already exists")
+
+            position_id = data.get('position')
+            if position_id:
+                try:
+                    Position.objects.get(id=position_id)
+                except Position.DoesNotExist:
+                    raise ValueError(
+                        f"Position with ID '{position_id}' does not exist")
+
             serializer = EmployeeSerializer(employee, data=data, partial=True)
             if serializer.is_valid():
                 updated_employee = serializer.save()
                 return updated_employee, None
             return None, serializer.errors
+        except ValueError as ve:
+            return None, str(ve)
         except Exception as e:
             return None, f"Error updating employee: {str(e)}"
 
@@ -108,10 +152,7 @@ class EmployeeService:
 
     @staticmethod
     def get_salary_report():
-        """
-        """
         try:
-            from decimal import Decimal
 
             employees = Employee.objects.all()
 
@@ -141,3 +182,22 @@ class EmployeeService:
 
         except Exception as e:
             return None, f"Error generating salary report: {e}"
+
+    @staticmethod
+    def _get_position_name(position):
+
+        if not position:
+            raise ValueError("Employee has no position assigned")
+
+        try:
+            position_obj = Position.objects.get(id=position.id)
+            if not position_obj.name:
+                raise ValueError(
+                    f"Position {position.id} exists but has no name")
+            return position_obj.name
+        except Position.DoesNotExist:
+            raise ValueError(
+                f"Position with ID {position.id} does not exist in database")
+        except Exception as e:
+            raise ValueError(
+                f"Error accessing position {position.id}: {str(e)}")

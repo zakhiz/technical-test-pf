@@ -13,9 +13,13 @@ class EmployeeSerializer(serializers.Serializer):
     salary = serializers.DecimalField(
         max_digits=10, decimal_places=2, min_value=0)
     hire_date = serializers.DateTimeField()
-    position_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+
+    deleted = serializers.BooleanField(read_only=True)
+    deleted_at = serializers.DateTimeField(read_only=True)
+    replacement_employee = serializers.CharField(read_only=True)
+    replacement_employee_name = serializers.CharField(read_only=True)
 
     def validate_position(self, value):
         try:
@@ -49,7 +53,22 @@ class EmployeeSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        if instance.position and hasattr(instance.position, 'name'):
-            data['position_name'] = instance.position.name
-            data['position'] = str(instance.position.id)
+
+        if instance.deleted:
+            data['deleted'] = True
+            data['deleted_at'] = instance.deleted_at
+
+            if instance.replacement_employee:
+                data['replacement_employee'] = str(
+                    instance.replacement_employee.id)
+                data['replacement_employee_name'] = f"{instance.replacement_employee.name} {instance.replacement_employee.last_name}"
+            else:
+                data['replacement_employee'] = None
+                data['replacement_employee_name'] = None
+        else:
+            data['deleted'] = False
+            data['deleted_at'] = None
+            data['replacement_employee'] = None
+            data['replacement_employee_name'] = None
+
         return data

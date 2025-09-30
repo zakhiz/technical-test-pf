@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, EmailField, DecimalField, DateTimeField, ReferenceField
+from mongoengine import Document, StringField, EmailField, DecimalField, DateTimeField, ReferenceField, BooleanField
 from apps.positions.models import Position
 
 
@@ -12,6 +12,11 @@ class Employee(Document):
     hire_date = DateTimeField(required=True)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
+
+    deleted = BooleanField(default=False)
+    deleted_at = DateTimeField()
+    replacement_employee = ReferenceField(
+        'self', null=True)
 
     meta = {
         'collection': 'employees',

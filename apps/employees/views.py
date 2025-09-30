@@ -21,9 +21,18 @@ class EmployeeViewSet(APIView):
         if error:
             return Response({'error': error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        serializer = EmployeeSerializer(employees['data'], many=True)
+        serialized_data = []
+        for employee_data in employees['data']:
+            employee = employee_data['employee']
+            position_name = employee_data['position_name']
+
+            serializer = EmployeeSerializer(employee)
+            data = serializer.data
+            data['position_name'] = position_name
+            serialized_data.append(data)
+
         return Response({
-            'data': serializer.data,
+            'data': serialized_data,
             'pagination': {
                 'page': page,
                 'page_size': page_size,
@@ -68,11 +77,22 @@ class EmployeeDetailView(APIView):
         if error:
             return Response({'error': error}, status=status.HTTP_404_NOT_FOUND)
 
-        delete_error = EmployeeService.delete_employee(employee)
-        if delete_error:
-            return Response({'error': delete_error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        replacement_employee_id = request.data.get('replacement_employee_id')
+        if not replacement_employee_id:
+            return Response({
+                'error': 'replacement_employee_id is required for deletion'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        delete_error = EmployeeService.delete_employee(
+            employee, replacement_employee_id)
+        if delete_error:
+            return Response({'error': delete_error}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'message': 'Employee deleted successfully',
+            'replacement_employee_id': replacement_employee_id,
+            'deleted_at': employee.deleted_at
+        }, status=status.HTTP_200_OK)
 
 
 class SalaryReportView(APIView):
