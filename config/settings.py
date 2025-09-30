@@ -59,12 +59,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 connect(
-    db=os.getenv('DB_NAME', 'peopleflow_db'),
+    db=os.getenv('DB_NAME'),
     host=os.getenv(
-        'DB_HOST', 'mongodb://admin:password123@mongodb:27017/peopleflow_db?authSource=admin'),
-    username=os.getenv('MONGO_INITDB_ROOT_USERNAME', 'admin'),
-    password=os.getenv('MONGO_INITDB_ROOT_PASSWORD', 'password123'),
-    authentication_source='admin'
+        'DB_HOST'),
+    username=os.getenv('MONGO_INITDB_ROOT_USERNAME'),
+    password=os.getenv('MONGO_INITDB_ROOT_PASSWORD'),
+    authentication_source=os.getenv('MONGO_AUTH_SOURCE')
 )
 
 

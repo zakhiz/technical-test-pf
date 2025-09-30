@@ -17,7 +17,7 @@ class PositionSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     "Position with this name already exists")
         else:
-            if Position.objects(name__iexact=value).exclude(id=self.instance.id).first():
+            if Position.objects(name__iexact=value, id__ne=self.instance.id).first():
                 raise serializers.ValidationError(
                     "Position with this name already exists")
         return value.strip()
