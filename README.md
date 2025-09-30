@@ -89,7 +89,6 @@ docker-compose exec api python manage.py seed_data
 3. **Acceder a la aplicación**
 - **API**: `http://localhost:8000/api/`
 - **Documentación**: `http://localhost:8000/api/docs/`
-- **Admin**: `http://localhost:8000/admin/`
 
 
 ## 📚 API Endpoints
@@ -171,7 +170,9 @@ La documentación interactiva está disponible en:
 - `hire_date`: Fecha de ingreso
 - `created_at`: Fecha de creación
 - `updated_at`: Fecha de actualización
-- `deleted_at`: Fecha de eliminación (soft delete)
+- `deleted`: Estado de eliminación (soft delete)
+- `deleted_at`: Fecha de eliminación
+- `replacement_employee`: Empleado que reemplaza al eliminado
 
 #### Posición
 - `name`: Nombre de la posición
@@ -183,12 +184,12 @@ La documentación interactiva está disponible en:
 - `title`: Título de la tarea
 - `description`: Descripción detallada
 - `status`: Estado actual (open, blocked, inprogress, qa, done)
-- `priority`: Prioridad (low, medium, high)
 - `assigned_to`: Empleado asignado
-- `created_by`: Empleado que creó la tarea
 - `due_date`: Fecha límite
 - `created_at`: Fecha de creación
 - `updated_at`: Fecha de actualización
+- `transferred_to`: Empleado al que se transfirió la tarea
+- `transferred_at`: Fecha de transferencia
 
 
 ## 🐳 Docker
@@ -208,9 +209,6 @@ docker-compose up -d --build
 ```bash
 # Ejecutar seed data
 docker-compose exec api python manage.py seed_data
-
-# Crear superusuario
-docker-compose exec api python manage.py createsuperuser
 ```
 
 #### Comandos útiles
@@ -243,38 +241,35 @@ python manage.py test
 
 ### Ejemplo de request con curl
 
-#### Registro
-```bash
-curl -X POST http://localhost:8000/api/auth/register/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "username": "testuser",
-    "first_name": "Test",
-    "last_name": "User",
-    "password": "password123",
-    "password_confirm": "password123"
-  }'
-```
-
-#### Login
-```bash
-curl -X POST http://localhost:8000/api/auth/login/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
-```
 
 #### Listar empleados
 ```bash
 curl -X GET http://localhost:8000/api/employees/
 ```
 
+#### Listar posiciones
+```bash
+curl -X GET http://localhost:8000/api/positions/
+```
+
 #### Listar tareas
 ```bash
 curl -X GET http://localhost:8000/api/tasks/
+```
+
+#### Crear empleado
+```bash
+curl -X POST http://localhost:8000/api/employees/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Juan",
+    "last_name": "Pérez",
+    "email": "juan.perez@company.com",
+    "phone": "1234567890",
+    "position": "507f1f77bcf86cd799439011",
+    "salary": 75000.00,
+    "hire_date": "2024-01-15T00:00:00Z"
+  }'
 ```
 
 #### Crear tarea
@@ -284,9 +279,8 @@ curl -X POST http://localhost:8000/api/tasks/ \
   -d '{
     "title": "Implementar nueva funcionalidad",
     "description": "Desarrollar la nueva característica solicitada",
-    "priority": "high",
     "assigned_to": "507f1f77bcf86cd799439011",
-    "created_by": "507f1f77bcf86cd799439012",
+    "status": "open",
     "due_date": "2024-02-15T00:00:00Z"
   }'
 ```
@@ -327,13 +321,24 @@ curl -X PATCH http://localhost:8000/api/tasks/507f1f77bcf86cd799439011/status/ \
 
 ## 📝 Notas de Desarrollo
 
-- **Soft Delete**: Los empleados eliminados se marcan con `deleted_at` en lugar de eliminarse físicamente
-- **Validaciones**: Email único, salarios positivos, fechas válidas
+### **🗑️ Sistema de Soft Delete**
+- **Empleados eliminados**: Se marcan con `deleted=True` y `deleted_at`
+- **NO se eliminan físicamente**: Se mantiene el historial completo
+- **Reemplazo obligatorio**: Al eliminar empleado, se debe especificar `replacement_employee_id`
+- **Transferencia automática**: Las tareas se transfieren al empleado de reemplazo
+
+### **🔄 Transferencia de Tareas**
+- **Automática**: Al eliminar empleado, todas sus tareas se transfieren
+- **Historial**: Se registra `transferred_to` y `transferred_at` en cada tarea
+- **Integridad**: No se pierden tareas en el proceso de eliminación
+
+### **✅ Validaciones y Reglas**
+- **Email único**: No se permiten emails duplicados en empleados
+- **Salarios positivos**: Validación de salarios mayores a 0
+- **Fechas válidas**: Validación de fechas de ingreso y vencimiento
+- **Estados de tareas**: Solo estados válidos (open, blocked, inprogress, qa, done)
 - **Paginación**: Máximo 100 elementos por página
 - **Filtros**: Búsqueda por posición y empleado con validación de ID
-- **Estados de Tareas**: Sistema de estados con validación (open, blocked, inprogress, qa, done)
-- **Asignación de Tareas**: Relación entre empleados y tareas
-- **Transferencia Automática**: Reasignación de tareas al desactivar empleados
 
 
 **Desarrollado por Jimmy Sebastian Higa Ramirez**
