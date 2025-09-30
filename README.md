@@ -74,6 +74,23 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+### 🐳 **Opción con Docker (Recomendado)**
+
+1. **Levantar con Docker Compose**
+```bash
+docker-compose up --build
+```
+
+2. **Poblar la base de datos con datos de prueba**
+```bash
+docker-compose exec api python manage.py seed_data
+```
+
+3. **Acceder a la aplicación**
+- **API**: `http://localhost:8000/api/`
+- **Documentación**: `http://localhost:8000/api/docs/`
+- **Admin**: `http://localhost:8000/admin/`
+
 
 ## 📚 API Endpoints
 
@@ -176,12 +193,42 @@ La documentación interactiva está disponible en:
 
 ## 🐳 Docker
 
-### Docker Compose
+### Comandos Docker
+
+#### Levantar la aplicación
 ```bash
-docker-compose up -d
+# Construir y levantar todos los servicios
+docker-compose up --build
+
+# Levantar en segundo plano
+docker-compose up -d --build
 ```
 
-### Dockerfile
+#### Poblar datos de prueba
+```bash
+# Ejecutar seed data
+docker-compose exec api python manage.py seed_data
+
+# Crear superusuario
+docker-compose exec api python manage.py createsuperuser
+```
+
+#### Comandos útiles
+```bash
+# Ver logs
+docker-compose logs -f api
+
+# Acceder al contenedor
+docker-compose exec api bash
+
+# Reiniciar servicios
+docker-compose restart
+
+# Detener servicios
+docker-compose down
+```
+
+#### Construir imagen individual
 ```bash
 docker build -t peopleflow-api .
 docker run -p 8000:8000 peopleflow-api
