@@ -1,0 +1,20 @@
+from mongoengine import Document, StringField, EmailField, DecimalField, DateTimeField, ReferenceField
+from apps.positions.models import Position
+
+
+class Employee(Document):
+    name = StringField(required=True, max_length=255)
+    email = EmailField(required=True, unique=True)
+    phone = StringField(required=True, max_length=20)
+    position = ReferenceField(Position, required=True)
+    salary = DecimalField(required=True, precision=2)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+
+    meta = {
+        'collection': 'employees',
+        'ordering': ['-created_at']
+    }
+
+    def __str__(self):
+        return self.name
