@@ -232,13 +232,6 @@ docker build -t peopleflow-api .
 docker run -p 8000:8000 peopleflow-api
 ```
 
-## 🧪 Testing
-
-### Ejecutar tests
-```bash
-python manage.py test
-```
-
 ### Ejemplo de request con curl
 
 
