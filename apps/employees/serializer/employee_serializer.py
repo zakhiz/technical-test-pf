@@ -6,11 +6,13 @@ from bson import ObjectId
 class EmployeeSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
     name = serializers.CharField(max_length=255, min_length=2)
+    last_name = serializers.CharField(max_length=255, min_length=2)
     email = serializers.EmailField()
     phone = serializers.CharField(max_length=20)
     position = serializers.CharField()
     salary = serializers.DecimalField(
         max_digits=10, decimal_places=2, min_value=0)
+    hire_date = serializers.DateTimeField()
     position_name = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
@@ -27,7 +29,6 @@ class EmployeeSerializer(serializers.Serializer):
             if Employee.objects(email=value).first():
                 raise serializers.ValidationError("Email already exists")
         else:
-            # Para MongoDB, usamos __ne (not equal) en lugar de exclude
             if Employee.objects(email=value, id__ne=self.instance.id).first():
                 raise serializers.ValidationError("Email already exists")
         return value

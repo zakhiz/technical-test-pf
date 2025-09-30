@@ -7,12 +7,30 @@ from .serializer import EmployeeSerializer
 
 class EmployeeViewSet(APIView):
     def get(self, request):
-        employees, error = EmployeeService.get_all_employees()
+        position_filter = request.query_params.get('position', None)
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 10
+
+        employees, error = EmployeeService.get_employees_with_filters(
+            position_filter, page, page_size)
         if error:
             return Response({'error': error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        serializer = EmployeeSerializer(employees, many=True)
-        return Response(serializer.data)
+        serializer = EmployeeSerializer(employees['data'], many=True)
+        return Response({
+            'data': serializer.data,
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total': employees['total'],
+                'total_pages': employees['total_pages']
+            }
+        })
 
     def post(self, request):
         employee, error = EmployeeService.create_employee(request.data)
@@ -55,3 +73,18 @@ class EmployeeDetailView(APIView):
             return Response({'error': delete_error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SalaryReportView(APIView):
+
+    def get(self, request):
+        report, error = EmployeeService.get_salary_report()
+        if error:
+            return Response({'error': error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            'report': report,
+            'message': 'Salary report generated successfully',
+            'requested_by': 'Nacho (CFO)',
+            'purpose': 'Weekly budget planning'
+        })
