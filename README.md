@@ -253,6 +253,31 @@ curl -X PATCH http://localhost:8000/api/tasks/507f1f77bcf86cd799439011/status/ \
   }'
 ```
 
+## 🎯 Analisis del caso presentado
+
+### Solucion propuesta para las problematicas encontradas
+
+**Problemas detectados**
+- Datos duplicados
+- Errores de tipeo y problemas al detectar estos
+- Baja productividad al momento de navegar o querer buscar algo simple
+
+**Ecosistema Empleados, posiciones, tareas**
+
+**Soluciones para probar y tomar en cuenta**
+
+- **Modulo de posiciones / roles**: division de datos para evitar que exista problemas de tipados en la posicion / rol del empleado se genero una colleccion aparte para manejar esto.
+
+- **Modulo de tareas**: para llevar el control del trabajo diario, semanal y mensual.
+
+- **Modulo de empleados**: alta de empleados, asignacion de puesto / rol por medio del id del puesto, salario, datos personales del empleado y por ultimo no menos importante se agrego un sistema de desactivacion de empleados el cual busca que no se elimine desde un inicio el usuario sino que se deshabilita y se debe reemplazar por otro empleado activo al cual se le asignan todas sus tareas que tenga asignadas el empleado deshabilitado.
+
+- **Funcion de reporte**: Nacho podra ver en el reporte la cantidad de empleados, media de salarios, salarios minimos, salarios maximos, y el total de todos los salarios.
+
+**Modulo de reportes (tarea proxima pensada):**
+
+- **Reporte de sueldos semanales**. (la idea era solicitar el reporte por medio de un cron job el cual se configuraria para todos los lunes, a la misma hora y que este le muestre los siguientes datos la cantidad de empleados, media de salarios, salarios minimos, salarios maximos, y el total de todos los salarios. ademas de esto pense crear un grafico el cual pueda dejar en claro los picos de los sueldos, cantidad de empleados con tal cantidades de sueldos. no llegue con el tiempo :c mil disculpas!)
+
 ## 📝 Notas de Desarrollo
 
 - **Soft Delete**: Los empleados eliminados se marcan con `deleted_at` en lugar de eliminarse físicamente
@@ -261,20 +286,7 @@ curl -X PATCH http://localhost:8000/api/tasks/507f1f77bcf86cd799439011/status/ \
 - **Filtros**: Búsqueda por posición y empleado con validación de ID
 - **Estados de Tareas**: Sistema de estados con validación (open, blocked, inprogress, qa, done)
 - **Asignación de Tareas**: Relación entre empleados y tareas
-
-## 🚨 Troubleshooting
-
-### Error de conexión a MongoDB
-- Verificar que MongoDB esté ejecutándose
-- Revisar las variables de entorno de conexión
-- Comprobar credenciales de autenticación
-
-### Error de validación de tareas
-- Verificar que los IDs de empleados sean válidos
-- Comprobar que el estado sea uno de los permitidos
-- Asegurar que las fechas sean válidas
+- **Transferencia Automática**: Reasignación de tareas al desactivar empleados
 
 
----
-
-**Desarrollado Jimmy Sebastian Higa Ramirez**
+**Desarrollado por Jimmy Sebastian Higa Ramirez**
