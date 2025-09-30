@@ -116,10 +116,41 @@ class EmployeeService:
             return None, f"Error updating employee: {str(e)}"
 
     @staticmethod
-    def delete_employee(employee):
+    def delete_employee(employee, replacement_employee_id):
         try:
-            employee.delete()
-            return True, None
+            from apps.tasks.service import TaskService
+            from datetime import datetime
+
+            from apps.tasks.models import Task
+            tasks = Task.objects(assigned_to=employee)
+
+            if tasks:
+                try:
+                    replacement_employee = Employee.objects.get(
+                        id=replacement_employee_id, deleted=False
+                    )
+                except Employee.DoesNotExist:
+                    return False, f"Replacement employee with ID '{replacement_employee_id}' does not exist or is deleted"
+
+                transferred_count, error = TaskService.transfer_tasks_from_employee(
+                    str(employee.id), replacement_employee_id
+                )
+                if error:
+                    return False, f"Error transferring tasks: {error}"
+
+                employee.deleted = True
+                employee.deleted_at = datetime.now()
+                employee.replacement_employee = replacement_employee
+                employee.save()
+
+                return True, None
+            else:
+                employee.deleted = True
+                employee.deleted_at = datetime.now()
+                employee.save()
+
+                return True, None
+
         except Exception as e:
             return False, f"Error deleting employee: {str(e)}"
 

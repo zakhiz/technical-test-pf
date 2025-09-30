@@ -83,9 +83,9 @@ class EmployeeDetailView(APIView):
                 'error': 'replacement_employee_id is required for deletion'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        delete_error = EmployeeService.delete_employee(
+        success, delete_error = EmployeeService.delete_employee(
             employee, replacement_employee_id)
-        if delete_error:
+        if not success:
             return Response({'error': delete_error}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
