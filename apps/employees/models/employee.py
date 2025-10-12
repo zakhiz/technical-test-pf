@@ -20,7 +20,16 @@ class Employee(Document):
 
     meta = {
         'collection': 'employees',
-        'ordering': ['-created_at']
+        'ordering': ['-created_at'],
+        'indexes':
+            [
+                'email',
+                'position',
+                'salary',
+                'hire_date',
+                'deleted_at',
+                [('position', 1), ('salary', 1)]
+        ]
     }
 
     def __str__(self):
