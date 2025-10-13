@@ -82,6 +82,62 @@ class EmployeeService:
             return None, f"Error getting employee by id: {e}"
 
     @staticmethod
+    def _get_position_name(position):
+
+        if not position:
+            raise ValueError("Employee has no position assigned")
+
+        try:
+            position_obj = Position.objects.get(id=position.id)
+            if not position_obj.name:
+                raise ValueError(
+                    f"Position {position.id} exists but has no name")
+            return position_obj.name
+        except Position.DoesNotExist:
+            raise ValueError(
+                f"Position with ID {position.id} does not exist in database")
+        except Exception as e:
+            raise ValueError(
+                f"Error accessing position {position.id}: {str(e)}")
+
+    @staticmethod
+    def get_salary_report():
+        try:
+
+            employees = Employee.objects.all()
+            print(employees)
+            if not employees:
+                return {
+                    'total_employees': 0,
+                    'average_salary': 0,
+                    'min_salary': 0,
+                    'max_salary': 0,
+                    'total_salary': 0
+                }, None
+
+            salaries = [emp.salary for emp in employees]
+            total_salary = sum(salaries)
+            average_salary = total_salary / len(salaries)
+            min_salary = min(salaries)
+            max_salary = max(salaries)
+
+            return {
+                'success': True,
+                'message': 'Salary report generated successfully',
+                'data': {
+                    'total_employees': len(employees),
+                    'average_salary': round(average_salary, 2),
+                    'min_salary': min_salary,
+                    'max_salary': max_salary,
+                    'total_salary': total_salary,
+                    'generated_at': datetime.now()
+                }
+            }, None
+
+        except Exception as e:
+            return None, f"Error generating salary report: {e}"
+
+    @staticmethod
     def create_employee(data):
         try:
             serializer = EmployeeSerializer(data=data)
@@ -170,55 +226,3 @@ class EmployeeService:
 
         except Exception as e:
             return False, f"Error deleting employee: {str(e)}"
-
-    @staticmethod
-    def get_salary_report():
-        try:
-
-            employees = Employee.objects.all()
-
-            if not employees:
-                return {
-                    'total_employees': 0,
-                    'average_salary': 0,
-                    'min_salary': 0,
-                    'max_salary': 0,
-                    'total_salary': 0
-                }, None
-
-            salaries = [float(emp.salary) for emp in employees]
-            total_salary = sum(salaries)
-            average_salary = total_salary / len(salaries)
-            min_salary = min(salaries)
-            max_salary = max(salaries)
-
-            return {
-                'total_employees': len(employees),
-                'average_salary': round(average_salary, 2),
-                'min_salary': min_salary,
-                'max_salary': max_salary,
-                'total_salary': total_salary,
-                'generated_at': employees[0].created_at if employees else None
-            }, None
-
-        except Exception as e:
-            return None, f"Error generating salary report: {e}"
-
-    @staticmethod
-    def _get_position_name(position):
-
-        if not position:
-            raise ValueError("Employee has no position assigned")
-
-        try:
-            position_obj = Position.objects.get(id=position.id)
-            if not position_obj.name:
-                raise ValueError(
-                    f"Position {position.id} exists but has no name")
-            return position_obj.name
-        except Position.DoesNotExist:
-            raise ValueError(
-                f"Position with ID {position.id} does not exist in database")
-        except Exception as e:
-            raise ValueError(
-                f"Error accessing position {position.id}: {str(e)}")

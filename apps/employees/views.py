@@ -69,12 +69,8 @@ class SalaryReportView(APIView):
 
     def get(self, request):
         report, error = EmployeeService.get_salary_report()
+        print(report)
         if error:
             return Response({'error': error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({
-            'report': report,
-            'message': 'Salary report generated successfully',
-            'requested_by': 'Nacho (CFO)',
-            'purpose': 'Weekly budget planning'
-        })
+        return Response(report)

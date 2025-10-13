@@ -16,8 +16,8 @@ class EmployeeSerializer(serializers.Serializer):
     position = serializers.CharField()
     salary = serializers.FloatField(min_value=0)
     hire_date = serializers.DateTimeField()
-    created_at = serializers.DateTimeField(default=datetime.now)
-    updated_at = serializers.DateTimeField(default=datetime.now)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
 
     deleted = serializers.BooleanField(read_only=True, required=False)
     deleted_at = serializers.DateTimeField(read_only=True, required=False)
@@ -46,6 +46,8 @@ class EmployeeSerializer(serializers.Serializer):
     def create(self, validated_data):
         validated_data = self._convert_value_position_to_objectId(
             validated_data)
+        validated_data.pop('created_at', None)
+        validated_data.pop('updated_at', None)
         employee = Employee(**validated_data)
         employee.save()
         return employee

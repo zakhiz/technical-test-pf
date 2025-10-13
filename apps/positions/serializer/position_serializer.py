@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from ..models import Position
 from apps.employees.models import Employee
+from datetime import datetime
 
 
 class PositionSerializer(serializers.Serializer):
@@ -29,7 +30,11 @@ class PositionSerializer(serializers.Serializer):
         return value.strip() if value else value
 
     def create(self, validated_data):
-        return Position.objects.create(**validated_data)
+        validated_data.pop('created_at', None)
+        validated_data.pop('updated_at', None)
+        position = Position(**validated_data)
+        position.save()
+        return position
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
