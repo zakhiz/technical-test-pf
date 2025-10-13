@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from ..models import Employee
 from bson import ObjectId
+from apps.positions.models import Position
 
 
 class EmployeeSerializer(serializers.Serializer):
@@ -24,9 +25,12 @@ class EmployeeSerializer(serializers.Serializer):
     def validate_position(self, value):
         try:
             ObjectId(value)
+            if not Position.objects.filter(id=value):
+                raise serializers.ValidationError("Position not found")
             return value
         except Exception as e:
-            raise serializers.ValidationError(f"Invalid position ID {e}")
+            print(e)
+            raise serializers.ValidationError("Invalid position ID")
 
     def validate_email(self, value):
         if not self.instance:

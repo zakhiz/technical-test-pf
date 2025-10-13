@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from ..serializer import EmployeeSerializer
 from apps.common.constants import ERROR_MESSAGES
 from ..models import Employee
@@ -16,36 +17,51 @@ class EmployeeService:
             return None, f"Error getting all employees: {e}"
 
     @staticmethod
-    def get_employees_with_filters(position_filter=None, page=1, page_size=10):
+    def get_employees_with_filters(filters=None, page=1, page_size=10):
         try:
             query = {}
-            if position_filter:
-                try:
-                    query['position'] = ObjectId(position_filter)
-                except Exception as e:
-                    return None, f"Invalid position ID format: {e}"
+
+            if filters:
+                if filters.get('name'):
+                    query['name__icontains'] = filters['name']
+                if filters.get('email'):
+                    query['email__icontains'] = filters['email']
 
             total = Employee.objects(**query).count()
             total_pages = (total + page_size - 1) // page_size
-
             offset = (page - 1) * page_size
 
-            employees = Employee.objects(**query).skip(offset).limit(page_size)
-
+            employees = Employee.objects(**query).only(
+                'id',
+                'name',
+                'last_name',
+                'email',
+                'phone',
+                'position',
+                'salary',
+                'hire_date').skip(offset).limit(page_size)
             employees_with_position = []
+
             for employee in employees:
                 position_name = EmployeeService._get_position_name(
                     employee.position)
                 employee_data = {
-                    'employee': employee,
+                    'id': str(employee.id),
+                    'name': employee.name,
+                    'last_name': employee.last_name,
+                    'email': employee.email,
+                    'phone': employee.phone,
+                    'position': str(employee.position),
+                    'salary': employee.salary,
+                    'hire_date': employee.hire_date,
                     'position_name': position_name
                 }
                 employees_with_position.append(employee_data)
-
             return {
                 'data': employees_with_position,
                 'total': total,
-                'total_pages': total_pages
+                'total_pages': total_pages,
+                'current_page': page,
             }, None
         except Exception as e:
             return None, f"Error getting employees with filters: {e}"
@@ -64,23 +80,21 @@ class EmployeeService:
     @staticmethod
     def create_employee(data):
         try:
-            email = data.get('email')
-            if email and Employee.objects(email=email).first():
-                raise ValueError(
-                    f"Employee with email '{email}' already exists")
-
-            position_id = data.get('position')
-            if position_id:
-                try:
-                    Position.objects.get(id=position_id)
-                except Position.DoesNotExist:
-                    raise ValueError(
-                        f"Position with ID '{position_id}' does not exist")
-
             serializer = EmployeeSerializer(data=data)
             if serializer.is_valid():
                 employee = serializer.save()
-                return employee, None
+                if not employee:
+                    raise ValueError("Employee not created")
+                new_employee = EmployeeSerializer(employee)
+
+                payload = {
+                    "success": True,
+                    "message": "Employee created successfully",
+                    "data": {
+                        "id": new_employee.data['id'],
+                    }
+                }
+                return payload, None
             return None, serializer.errors
         except ValueError as ve:
             return None, str(ve)
