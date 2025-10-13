@@ -1,7 +1,10 @@
 from rest_framework import serializers
+
+from apps.employees.models import employee
 from ..models import Employee
 from bson import ObjectId
 from apps.positions.models import Position
+from datetime import datetime
 
 
 class EmployeeSerializer(serializers.Serializer):
@@ -11,16 +14,15 @@ class EmployeeSerializer(serializers.Serializer):
     email = serializers.EmailField()
     phone = serializers.CharField(max_length=20)
     position = serializers.CharField()
-    salary = serializers.DecimalField(
-        max_digits=10, decimal_places=2, min_value=0)
+    salary = serializers.FloatField(min_value=0)
     hire_date = serializers.DateTimeField()
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
+    created_at = serializers.DateTimeField(default=datetime.now)
+    updated_at = serializers.DateTimeField(default=datetime.now)
 
-    deleted = serializers.BooleanField(read_only=True)
-    deleted_at = serializers.DateTimeField(read_only=True)
-    replacement_employee = serializers.CharField(read_only=True)
-    replacement_employee_name = serializers.CharField(read_only=True)
+    deleted = serializers.BooleanField(read_only=True, required=False)
+    deleted_at = serializers.DateTimeField(read_only=True, required=False)
+    replacement_employee = serializers.CharField(
+        read_only=True)
 
     def validate_position(self, value):
         try:
@@ -38,41 +40,26 @@ class EmployeeSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Email already exists")
         else:
             if Employee.objects(email=value, id__ne=self.instance.id).first():
-                raise serializers.ValidationError("Email already exists")
+                raise serializers.ValidationError("Email already used")
         return value
 
     def create(self, validated_data):
-        if 'position' in validated_data:
-            validated_data['position'] = ObjectId(validated_data['position'])
-        return Employee.objects.create(**validated_data)
+        validated_data = self._convert_value_position_to_objectId(
+            validated_data)
+        employee = Employee(**validated_data)
+        employee.save()
+        return employee
 
     def update(self, instance, validated_data):
         if 'position' in validated_data:
-            validated_data['position'] = ObjectId(validated_data['position'])
-
+            validated_data = self._convert_value_position_to_objectId(
+                validated_data)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         return instance
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        if instance.deleted:
-            data['deleted'] = True
-            data['deleted_at'] = instance.deleted_at
-
-            if instance.replacement_employee:
-                data['replacement_employee'] = str(
-                    instance.replacement_employee.id)
-                data['replacement_employee_name'] = f"{instance.replacement_employee.name} {instance.replacement_employee.last_name}"
-            else:
-                data['replacement_employee'] = None
-                data['replacement_employee_name'] = None
-        else:
-            data['deleted'] = False
-            data['deleted_at'] = None
-            data['replacement_employee'] = None
-            data['replacement_employee_name'] = None
-
-        return data
+    def _convert_value_position_to_objectId(self, values):
+        if 'position' in values:
+            values['position'] = ObjectId(values['position'])
+        return values

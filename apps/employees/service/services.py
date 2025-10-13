@@ -5,20 +5,21 @@ from ..models import Employee
 from decimal import Decimal
 from bson import ObjectId
 from apps.positions.models import Position
+from apps.tasks.service import TaskService
+from datetime import datetime
+
+from apps.tasks.models import Task
 
 
 class EmployeeService:
     @staticmethod
-    def get_all_employees():
-        try:
-            employees = Employee.objects.all()
-            return employees, None
-        except Exception as e:
-            return None, f"Error getting all employees: {e}"
-
-    @staticmethod
     def get_employees_with_filters(filters=None, page=1, page_size=10):
         try:
+            if page < 1:
+                page = 1
+            if page_size < 1 or page_size > 100:
+                page_size = 10
+
             query = {}
 
             if filters:
@@ -31,15 +32,7 @@ class EmployeeService:
             total_pages = (total + page_size - 1) // page_size
             offset = (page - 1) * page_size
 
-            employees = Employee.objects(**query).only(
-                'id',
-                'name',
-                'last_name',
-                'email',
-                'phone',
-                'position',
-                'salary',
-                'hire_date').skip(offset).limit(page_size)
+            employees = Employee.objects(**query).skip(offset).limit(page_size)
             employees_with_position = []
 
             for employee in employees:
@@ -51,13 +44,18 @@ class EmployeeService:
                     'last_name': employee.last_name,
                     'email': employee.email,
                     'phone': employee.phone,
-                    'position': str(employee.position),
+                    'position': str(employee.position.id),
                     'salary': employee.salary,
                     'hire_date': employee.hire_date,
-                    'position_name': position_name
+                    'position_name': position_name,
+                    'deleted': employee.deleted,
+                    'deleted_at': employee.deleted_at,
+                    'replacement_employee': str(employee.replacement_employee.id) if employee.replacement_employee else None,
                 }
                 employees_with_position.append(employee_data)
             return {
+                'success': True,
+                'message': 'Employees fetched successfully',
                 'data': employees_with_position,
                 'total': total,
                 'total_pages': total_pages,
@@ -71,7 +69,13 @@ class EmployeeService:
         try:
             employee = Employee.objects.get(
                 id=employee_id)
-            return employee, None
+            serializer = EmployeeSerializer(employee)
+            payload = {
+                "success": True,
+                "message": "Employee fetched successfully",
+                "data": serializer.data
+            }
+            return payload, None
         except Employee.DoesNotExist:
             return None, ERROR_MESSAGES['employee']['not_found']
         except Exception as e:
@@ -82,16 +86,15 @@ class EmployeeService:
         try:
             serializer = EmployeeSerializer(data=data)
             if serializer.is_valid():
-                employee = serializer.save()
-                if not employee:
+                new_employee = serializer.save()
+                if not new_employee:
                     raise ValueError("Employee not created")
-                new_employee = EmployeeSerializer(employee)
 
                 payload = {
                     "success": True,
                     "message": "Employee created successfully",
                     "data": {
-                        "id": new_employee.data['id'],
+                        "id": str(new_employee.id),
                     }
                 }
                 return payload, None
@@ -102,27 +105,29 @@ class EmployeeService:
             return None, f"Error creating employee: {str(e)}"
 
     @staticmethod
-    def update_employee(employee, data):
+    def update_employee(pk, data):
         try:
+            employee = Employee.objects.get(
+                id=pk)
             email = data.get('email')
             if email and email != employee.email:
                 existing_employee = Employee.objects(email=email).first()
                 if existing_employee and existing_employee.id != employee.id:
                     raise ValueError(
                         f"Employee with email '{email}' already exists")
-
-            position_id = data.get('position')
-            if position_id:
-                try:
-                    Position.objects.get(id=position_id)
-                except Position.DoesNotExist:
-                    raise ValueError(
-                        f"Position with ID '{position_id}' does not exist")
-
             serializer = EmployeeSerializer(employee, data=data, partial=True)
             if serializer.is_valid():
                 updated_employee = serializer.save()
-                return updated_employee, None
+                if not updated_employee:
+                    raise ValueError("Employee not updated")
+                payload = {
+                    "success": True,
+                    "message": "Employee updated successfully",
+                    "data": {
+                        "id": str(updated_employee.id),
+                    }
+                }
+                return payload, None
             return None, serializer.errors
         except ValueError as ve:
             return None, str(ve)
@@ -132,10 +137,7 @@ class EmployeeService:
     @staticmethod
     def delete_employee(employee, replacement_employee_id):
         try:
-            from apps.tasks.service import TaskService
-            from datetime import datetime
 
-            from apps.tasks.models import Task
             tasks = Task.objects(assigned_to=employee)
 
             if tasks:
@@ -149,6 +151,7 @@ class EmployeeService:
                 transferred_count, error = TaskService.transfer_tasks_from_employee(
                     str(employee.id), replacement_employee_id
                 )
+
                 if error:
                     return False, f"Error transferring tasks: {error}"
 
@@ -167,33 +170,6 @@ class EmployeeService:
 
         except Exception as e:
             return False, f"Error deleting employee: {str(e)}"
-
-    @staticmethod
-    def get_employee_by_email(email):
-        try:
-            employee = Employee.objects.get(email=email)
-            return employee, None
-        except Employee.DoesNotExist:
-            return None, ERROR_MESSAGES['employee']['not_found']
-        except Exception as e:
-            return None, f"Error getting employee by email: {str(e)}"
-
-    @staticmethod
-    def get_employee_by_position(position):
-        try:
-            employees = Employee.objects.filter(position=position)
-            return employees, None
-        except Exception as e:
-            return None, f"Error getting employees by position: {str(e)}"
-
-    @staticmethod
-    def get_employees_by_salary(salary):
-        try:
-            employees = Employee.objects.filter(
-                salary=salary)
-            return employees, None
-        except Exception as e:
-            return None, f"Error getting employees by salary: {str(e)}"
 
     @staticmethod
     def get_salary_report():
