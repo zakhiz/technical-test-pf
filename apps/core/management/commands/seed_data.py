@@ -162,13 +162,16 @@ class Command(BaseCommand):
                     self.stdout.write(
                         f'Task already exists: {task_data["title"]}')
                 except Task.DoesNotExist:
-                    task = Task.objects.create(
+                    task = Task(
                         title=task_data['title'],
                         assigned_to=assigned_employee,
                         description=task_data['description'],
                         status=task_data['status'],
-                        due_date=due_date
+                        due_date=due_date,
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
                     )
+                    task.save()
                     self.stdout.write(f'Created task: {task_data["title"]}')
             else:
                 self.stdout.write('No employees available to assign tasks')

@@ -173,9 +173,9 @@ class EmployeeService:
                         f"Employee with email '{email}' already exists")
             serializer = EmployeeSerializer(employee, data=data, partial=True)
             if serializer.is_valid():
+
                 updated_employee = serializer.save()
-                if not updated_employee:
-                    raise ValueError("Employee not updated")
+
                 payload = {
                     "success": True,
                     "message": "Employee updated successfully",
