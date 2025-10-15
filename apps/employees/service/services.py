@@ -105,7 +105,6 @@ class EmployeeService:
         try:
 
             employees = Employee.objects.all()
-            print(employees)
             if not employees:
                 return {
                     'total_employees': 0,

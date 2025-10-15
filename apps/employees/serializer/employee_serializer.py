@@ -31,7 +31,6 @@ class EmployeeSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Position not found")
             return value
         except Exception as e:
-            print(e)
             raise serializers.ValidationError("Invalid position ID")
 
     def validate_email(self, value):

@@ -36,7 +36,6 @@ class EmployeeDetailView(APIView):
     def put(self, request, pk):
         updated_employee, update_error = EmployeeService.update_employee(
             pk, request.data)
-        print(updated_employee)
         if update_error:
             return Response({'error': update_error}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -69,7 +68,6 @@ class SalaryReportView(APIView):
 
     def get(self, request):
         report, error = EmployeeService.get_salary_report()
-        print(report)
         if error:
             return Response({'error': error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
