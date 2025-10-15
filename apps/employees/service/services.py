@@ -57,7 +57,7 @@ class EmployeeService:
                 'success': True,
                 'message': 'Employees fetched successfully',
                 'data': employees_with_position,
-                'total': total,
+                'total_employees': total,
                 'total_pages': total_pages,
                 'current_page': page,
             }, None
