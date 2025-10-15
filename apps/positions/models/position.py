@@ -9,7 +9,8 @@ class Position(Document):
 
     meta = {
         'collection': 'positions',
-        'ordering': ['-created_at']
+        'ordering': ['-created_at'],
+        'indexes': ['name', 'description']
     }
 
     def __str__(self):

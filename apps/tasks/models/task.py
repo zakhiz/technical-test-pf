@@ -17,7 +17,8 @@ class Task(Document):
 
     meta = {
         'collection': 'tasks',
-        'ordering': ['-created_at']
+        'ordering': ['-created_at'],
+        'indexes': ['title', 'assigned_to', 'status', 'due_date']
     }
 
     def __str__(self):
