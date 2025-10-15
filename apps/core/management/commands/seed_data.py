@@ -152,7 +152,7 @@ class Command(BaseCommand):
         ]
 
         for task_data in tasks_data:
-            if employees:  # Verificar que hay empleados disponibles
+            if employees:
                 assigned_employee = random.choice(employees)
                 due_date = datetime.now() + timedelta(days=random.randint(1, 30))
 
