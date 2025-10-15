@@ -7,20 +7,22 @@ from .serializer import PositionSerializer
 
 class PositionViewSet(APIView):
     def get(self, request):
-        positions, error = PositionService.get_all_positions()
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+
+        positions, error = PositionService.get_all_positions(
+            request.query_params, page, page_size)
         if error:
             return Response({'error': error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        serializer = PositionSerializer(positions, many=True)
-        return Response(serializer.data)
+        return Response(positions)
 
     def post(self, request):
         position, error = PositionService.create_position(request.data)
         if error:
             return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = PositionSerializer(position)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(position, status=status.HTTP_201_CREATED)
 
 
 class PositionDetailView(APIView):
@@ -29,29 +31,20 @@ class PositionDetailView(APIView):
         if error:
             return Response({'error': error}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PositionSerializer(position)
-        return Response(serializer.data)
+        return Response(position)
 
     def put(self, request, pk):
-        position, error = PositionService.get_position_by_id(pk)
-        if error:
-            return Response({'error': error}, status=status.HTTP_404_NOT_FOUND)
-
         updated_position, update_error = PositionService.update_position(
-            position, request.data)
+            pk, request.data)
         if update_error:
             return Response({'error': update_error}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = PositionSerializer(updated_position)
-        return Response(serializer.data)
+        return Response(updated_position)
 
     def delete(self, request, pk):
-        position, error = PositionService.get_position_by_id(pk)
-        if error:
-            return Response({'error': error}, status=status.HTTP_404_NOT_FOUND)
 
-        delete_error = PositionService.delete_position(position)
+        delete_response, delete_error = PositionService.delete_position(pk)
         if delete_error:
             return Response({'error': delete_error}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(delete_response, status=status.HTTP_204_NO_CONTENT)

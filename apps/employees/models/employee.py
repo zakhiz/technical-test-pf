@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, EmailField, DecimalField, DateTimeField, ReferenceField, BooleanField
+from mongoengine import Document, StringField, EmailField, FloatField, DateTimeField, ReferenceField, BooleanField
 from apps.positions.models import Position
 
 
@@ -8,7 +8,7 @@ class Employee(Document):
     email = EmailField(required=True, unique=True)
     phone = StringField(required=True, max_length=20)
     position = ReferenceField(Position, required=True)
-    salary = DecimalField(required=True, precision=2)
+    salary = FloatField(required=True)
     hire_date = DateTimeField(required=True)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)

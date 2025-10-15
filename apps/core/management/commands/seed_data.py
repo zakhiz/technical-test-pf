@@ -35,10 +35,13 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f'Position already exists: {pos_data["name"]}')
             except Position.DoesNotExist:
-                position = Position.objects.create(
+                position = Position(
                     name=pos_data['name'],
-                    description=pos_data['description']
+                    description=pos_data['description'],
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
                 )
+                position.save()
                 self.stdout.write(f'Created position: {pos_data["name"]}')
 
     def create_employees(self):
@@ -84,15 +87,18 @@ class Command(BaseCommand):
                     self.stdout.write(
                         f'Employee already exists: {emp_data["name"]} {emp_data["last_name"]}')
                 except Employee.DoesNotExist:
-                    employee = Employee.objects.create(
+                    employee = Employee(
                         name=emp_data['name'],
                         last_name=emp_data['last_name'],
                         email=emp_data['email'],
                         position=position,
                         salary=random.randint(30000, 120000),
                         phone=f'555-{random.randint(1000, 9999)}',
-                        hire_date=datetime.now()
+                        hire_date=datetime.now(),
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
                     )
+                    employee.save()
                     self.stdout.write(
                         f'Created employee: {emp_data["name"]} {emp_data["last_name"]}')
             except Position.DoesNotExist:
@@ -156,13 +162,16 @@ class Command(BaseCommand):
                     self.stdout.write(
                         f'Task already exists: {task_data["title"]}')
                 except Task.DoesNotExist:
-                    task = Task.objects.create(
+                    task = Task(
                         title=task_data['title'],
                         assigned_to=assigned_employee,
                         description=task_data['description'],
                         status=task_data['status'],
-                        due_date=due_date
+                        due_date=due_date,
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
                     )
+                    task.save()
                     self.stdout.write(f'Created task: {task_data["title"]}')
             else:
                 self.stdout.write('No employees available to assign tasks')
